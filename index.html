@@ -29,9 +29,20 @@
         <tbody id="items"></tbody>
       </table>
       <button type="button" id="add-item">+ Добавить позицию</button>
+      <div class="adjustments">
+        <label>Скидка, %<input id="discount-rate" type="text" inputmode="decimal" value="0"></label>
+        <label>НДС, %<input id="vat-rate" type="text" inputmode="decimal" value="0"></label>
+        <label>Валюта<select id="currency"><option value="₸">₸</option><option value="₽">₽</option><option value="$">$</option><option value="€">€</option></select></label>
+      </div>
     </section>
     <section class="total-card" aria-label="Итог сметы">
-      <span>Итого к оплате</span><output id="total" aria-live="polite" aria-atomic="true">0 ₸</output>
+      <dl class="summary">
+        <div class="summary-row"><dt>Сумма</dt><dd><output id="subtotal">0 ₸</output></dd></div>
+        <div class="summary-row" id="discount-row" hidden><dt>Скидка</dt><dd><output id="discount-amount">0 ₸</output></dd></div>
+        <div class="summary-row" id="discounted-row" hidden><dt>Сумма со скидкой</dt><dd><output id="discounted-amount">0 ₸</output></dd></div>
+        <div class="summary-row" id="vat-row" hidden><dt>НДС</dt><dd><output id="vat-amount">0 ₸</output></dd></div>
+        <div class="summary-row grand-total"><dt>Итого к оплате</dt><dd><output id="total" aria-live="polite" aria-atomic="true">0 ₸</output></dd></div>
+      </dl>
     </section>
   </main>
   <template id="item-template">
@@ -39,7 +50,7 @@
       <td data-label="Наименование"><input class="item-name" type="text" aria-label="Наименование" placeholder="Товар или услуга"></td>
       <td data-label="Количество"><input class="quantity" type="text" inputmode="decimal" aria-label="Количество" placeholder="0"></td>
       <td data-label="Единица"><select aria-label="Единица"><option>шт</option><option>час</option><option>услуга</option></select></td>
-      <td data-label="Цена"><input class="price" type="text" inputmode="decimal" aria-label="Цена в тенге" placeholder="0"></td>
+      <td data-label="Цена"><input class="price" type="text" inputmode="decimal" aria-label="Цена, ₸" placeholder="0"></td>
       <td data-label="Сумма" class="amount-cell"><output class="amount">0 ₸</output></td>
       <td class="remove-cell"><button class="remove" type="button" aria-label="Удалить позицию">✕</button></td>
     </tr>

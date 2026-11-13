@@ -3,7 +3,10 @@
 const items = document.querySelector("#items");
 const template = document.querySelector("#item-template");
 const total = document.querySelector("#total");
-const moneyFormatter = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 });
+const discountRate = document.querySelector("#discount-rate");
+const vatRate = document.querySelector("#vat-rate");
+const currency = document.querySelector("#currency");
+const moneyFormatter = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 });
 
 function numberFromInput(value) {
   const normalized = value.trim().replace(/[\s\u00a0\u202f]/g, "").replace(",", ".");
@@ -13,29 +16,47 @@ function numberFromInput(value) {
 }
 
 function money(value) {
-  return moneyFormatter.format(Number.isFinite(value) ? value : 0).replace(/[\u00a0\u202f]/g, " ") + " ₸";
+  const rounded = Number.isFinite(value) ? Math.round(value) : 0;
+  return moneyFormatter.format(rounded === 0 ? 0 : rounded).replace(/[\u00a0\u202f]/g, " ") + " " + currency.value;
 }
 
 function recalculate() {
   let sum = 0;
   for (const row of items.rows) {
     const product = numberFromInput(row.querySelector(".quantity").value) * numberFromInput(row.querySelector(".price").value);
-    const amount = Number.isFinite(product) ? Math.round(product * 100) / 100 : 0;
-    const safeAmount = Number.isFinite(amount) ? amount : 0;
+    const safeAmount = Number.isFinite(product) ? product : 0;
     row.querySelector(".amount").textContent = money(safeAmount);
+    row.querySelector(".price").setAttribute("aria-label", "Цена, " + currency.value);
     sum += safeAmount;
   }
-  total.textContent = money(sum);
+  if (!Number.isFinite(sum)) sum = 0;
+  const discountPercent = numberFromInput(discountRate.value);
+  const vatPercent = numberFromInput(vatRate.value);
+  const discount = sum * (discountPercent / 100);
+  const discounted = sum - discount;
+  const vat = discounted * (vatPercent / 100);
+  document.querySelector("#subtotal").textContent = money(sum);
+  document.querySelector("#discount-amount").textContent = money(discount);
+  document.querySelector("#discounted-amount").textContent = money(discounted);
+  document.querySelector("#vat-amount").textContent = money(vat);
+  document.querySelector("#discount-row").hidden = discountPercent === 0;
+  document.querySelector("#discounted-row").hidden = discountPercent === 0;
+  document.querySelector("#vat-row").hidden = vatPercent === 0;
+  total.textContent = money(discounted + vat);
 }
 
 function addItem(focus = true) {
   const row = template.content.firstElementChild.cloneNode(true);
   items.append(row);
+  recalculate();
   if (focus) row.querySelector(".item-name").focus();
 }
 
 document.querySelector("#add-item").addEventListener("click", () => addItem());
 items.addEventListener("input", recalculate);
+discountRate.addEventListener("input", recalculate);
+vatRate.addEventListener("input", recalculate);
+currency.addEventListener("change", recalculate);
 items.addEventListener("click", (event) => {
   const button = event.target.closest(".remove");
   if (!button) return;
