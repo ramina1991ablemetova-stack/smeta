@@ -42,6 +42,12 @@ textarea { display: block; width: 100%; min-width: 44px; min-height: 100px; marg
 textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 #save-pdf { padding: 12px 24px; color: white; background: var(--accent); border: 0; font-weight: 600; }
 #save-pdf:hover { background: #2849b8; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.actions button:not(#save-pdf) { padding: 12px 18px; border: 1px solid #b9c3d2; color: #1d2939; background: white; }
+.actions button:not(#save-pdf):hover { background: #e8ecf2; }
+.screen-only { overflow-wrap: anywhere; }
+#draft-status, #copy-status { font-size: 14px; color: #566276; }
+#manual-copy { margin-top: 20px; }
 @media (min-width: 641px) and (max-width: 900px) { main { padding: 28px 12px; } .card { padding: 16px; } td, th { padding-left: 3px; padding-right: 3px; } input, select { padding-left: 6px; padding-right: 6px; } }
 @media (max-width: 640px) {
   main { padding: 28px 16px; }
@@ -67,7 +73,7 @@ textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; 
   :root, body { background: white; color: black; }
   body { font-size: 11pt; line-height: 1.4; }
   main { max-width: none; margin: 0; padding: 0; }
-  header, button, input, select, textarea, .remove-cell, th:last-child { display: none !important; }
+  header, button, input, select, textarea, .remove-cell, th:last-child, .actions, .screen-only { display: none !important; }
   .print-only, .print-value { display: block; }
   #print-title { font-size: 20pt; letter-spacing: normal; margin: 0 0 8mm; overflow-wrap: anywhere; }
   h2 { font-size: 13pt; margin: 0 0 4mm; break-after: avoid; }

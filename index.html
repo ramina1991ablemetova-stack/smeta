@@ -51,7 +51,18 @@
       <textarea id="comment" rows="4" placeholder="Например, оплата в течение 5 рабочих дней"></textarea>
     </section>
     <p class="print-only signature">Подпись: ____________________</p>
-    <button type="button" id="save-pdf">Сохранить PDF</button>
+    <div class="actions">
+      <button type="button" id="save-pdf">Сохранить PDF</button>
+      <button type="button" id="copy-whatsapp">Копировать для WhatsApp</button>
+      <button type="button" id="new-estimate">Новая смета</button>
+    </div>
+    <p id="draft-status" class="screen-only" role="status"></p>
+    <p id="copy-status" class="screen-only" role="status"></p>
+    <section id="manual-copy" class="card screen-only" hidden aria-labelledby="manual-copy-title">
+      <h2 id="manual-copy-title">Текст для WhatsApp</h2>
+      <label for="whatsapp-text">Скопируйте текст вручную и вставьте в WhatsApp</label>
+      <textarea id="whatsapp-text" rows="10" readonly></textarea>
+    </section>
   </main>
   <template id="item-template">
     <tr>
