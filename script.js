@@ -6,7 +6,7 @@ const total = document.querySelector("#total");
 const discountRate = document.querySelector("#discount-rate");
 const vatRate = document.querySelector("#vat-rate");
 const currency = document.querySelector("#currency");
-const moneyFormatter = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 });
+const moneyFormatter = new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const draftKey = "smeta-five-minutes-draft-v1";
 const draftFields = {
   sender: '[name="sender"]',
@@ -20,6 +20,7 @@ const draftFields = {
 };
 let draftReady = false;
 let copyTimer;
+let approval = { versions: [], active: null };
 
 function numberFromInput(value) {
   const normalized = value.trim().replace(/[\s\u00a0\u202f]/g, "").replace(",", ".");
@@ -28,8 +29,16 @@ function numberFromInput(value) {
   return Number.isFinite(number) ? number : 0;
 }
 
+// Денежные этапы считаем в целых тиынах. Половину округляем от нуля.
+function roundedInteger(value) {
+  if (!Number.isFinite(value)) return 0;
+  const absolute = Math.abs(value);
+  const rounded = Math.sign(value) * Math.round(absolute + Number.EPSILON * absolute);
+  return Number.isSafeInteger(rounded) ? rounded : 0;
+}
+
 function money(value) {
-  const rounded = Number.isFinite(value) ? Math.round(value) : 0;
+  const rounded = roundedInteger(value * 100) / 100;
   return moneyFormatter.format(rounded === 0 ? 0 : rounded).replace(/[\u00a0\u202f]/g, " ") + " " + currency.value;
 }
 
@@ -37,25 +46,25 @@ function recalculate() {
   let sum = 0;
   for (const row of items.rows) {
     const product = numberFromInput(row.querySelector(".quantity").value) * numberFromInput(row.querySelector(".price").value);
-    const safeAmount = Number.isFinite(product) ? product : 0;
-    row.querySelector(".amount").textContent = money(safeAmount);
+    const safeAmount = roundedInteger(product * 100);
+    row.querySelector(".amount").textContent = money(safeAmount / 100);
     row.querySelector(".price").setAttribute("aria-label", "Цена, " + currency.value);
     sum += safeAmount;
   }
-  if (!Number.isFinite(sum)) sum = 0;
+  if (!Number.isSafeInteger(sum)) sum = 0;
   const discountPercent = numberFromInput(discountRate.value);
   const vatPercent = numberFromInput(vatRate.value);
-  const discount = sum * (discountPercent / 100);
+  const discount = roundedInteger(sum * (discountPercent / 100));
   const discounted = sum - discount;
-  const vat = discounted * (vatPercent / 100);
-  document.querySelector("#subtotal").textContent = money(sum);
-  document.querySelector("#discount-amount").textContent = money(discount);
-  document.querySelector("#discounted-amount").textContent = money(discounted);
-  document.querySelector("#vat-amount").textContent = money(vat);
+  const vat = roundedInteger(discounted * (vatPercent / 100));
+  document.querySelector("#subtotal").textContent = money(sum / 100);
+  document.querySelector("#discount-amount").textContent = money(discount / 100);
+  document.querySelector("#discounted-amount").textContent = money(discounted / 100);
+  document.querySelector("#vat-amount").textContent = money(vat / 100);
   document.querySelector("#discount-row").hidden = discountPercent === 0;
   document.querySelector("#discounted-row").hidden = discountPercent === 0;
   document.querySelector("#vat-row").hidden = vatPercent === 0;
-  total.textContent = money(discounted + vat);
+  total.textContent = money((discounted + vat) / 100);
 }
 
 function addItem(focus = true) {
@@ -96,7 +105,10 @@ document.querySelector("#estimate-date").value = `${today.getFullYear()}-${Strin
 addItem(false);
 
 function preparePrint() {
+  if (document.body.classList.contains("printing-version")) return;
   recalculate();
+  saveDraft();
+  renderApproval();
   const number = document.querySelector('[name="estimate-number"]').value.trim() || "—";
   const date = document.querySelector("#estimate-date").value;
   const formattedDate = date ? date.split("-").reverse().join(".") : "—";
@@ -110,7 +122,9 @@ function preparePrint() {
       value.className = "print-value";
       field.after(value);
     }
-    value.textContent = field.value || "—";
+    value.textContent = field.classList.contains("price")
+      ? money(numberFromInput(field.value))
+      : field.value || "—";
   }
 }
 
@@ -138,14 +152,18 @@ function collectDraft() {
 
 function saveDraft() {
   if (!draftReady) return;
+  invalidateApproval();
+  renderApproval();
   document.querySelector("#manual-copy").hidden = true;
   clearTimeout(copyTimer);
   document.querySelector("#copy-status").textContent = "";
   try {
-    localStorage.setItem(draftKey, JSON.stringify(collectDraft()));
+    localStorage.setItem(draftKey, JSON.stringify({ ...collectDraft(), approval }));
     document.querySelector("#draft-status").textContent = "Черновик сохранён в этом браузере";
+    return true;
   } catch {
     document.querySelector("#draft-status").textContent = "Не удалось сохранить черновик. Проверьте, разрешено ли хранение данных в браузере.";
+    return false;
   }
 }
 
@@ -175,6 +193,11 @@ function restoreDraft() {
     }
     recalculate();
     document.querySelector("#draft-status").textContent = "Черновик восстановлен";
+    if (draft.approval) {
+      if (!validApproval(draft.approval)) throw new Error("Invalid approval history");
+      approval = draft.approval;
+      invalidateApproval();
+    }
   } catch {
     document.querySelector("#draft-status").textContent = "Не удалось восстановить черновик. Можно продолжить с новой сметой.";
   }
@@ -189,6 +212,7 @@ document.querySelector("main").addEventListener("change", (event) => {
 
 document.querySelector("#new-estimate").addEventListener("click", () => {
   if (!window.confirm("Создать новую смету? Текущий черновик будет заменён.")) return;
+  approval.active = null;
   const numberField = document.querySelector(draftFields.number);
   const currentNumber = numberField.value.trim();
   const match = currentNumber.match(/^(.*?)(\d+)$/);
@@ -253,3 +277,144 @@ document.querySelector("#copy-whatsapp").addEventListener("click", async () => {
 
 restoreDraft();
 draftReady = true;
+renderApproval();
+
+function currentVersion() {
+  return approval.versions.find((version) => version.version === approval.active);
+}
+
+function invalidateApproval() {
+  const version = currentVersion();
+  if (version && JSON.stringify(version.draft) !== JSON.stringify(collectDraft())) approval.active = null;
+}
+
+function validApproval(state) {
+  if (!state || !Array.isArray(state.versions)) return false;
+  const valid = state.versions.every((v, index) => v && v.version === index + 1 &&
+    typeof v.text === "string" && typeof v.total === "string" &&
+    typeof v.createdAt === "string" && Number.isFinite(Date.parse(v.createdAt)) &&
+    v.draft && v.draft.fields && Array.isArray(v.draft.items) &&
+    ["pending", "approved", "returned"].includes(v.status) &&
+    (v.status === "pending" ? v.decision === null : v.decision &&
+      v.decision.version === v.version && typeof v.decision.reviewer === "string" &&
+      typeof v.decision.comment === "string" && typeof v.decision.at === "string" &&
+      Number.isFinite(Date.parse(v.decision.at))));
+  return valid && (state.active === null || state.versions.some((v) => v.version === state.active));
+}
+
+function decisionText(version) {
+  if (!version.decision) return "";
+  const d = version.decision;
+  return (version.status === "approved" ? "Согласовано (демо)" : "Возвращено на доработку (демо)") +
+    "\nВерсия " + d.version + " · Проверяющий: " + d.reviewer +
+    "\nДата и время: " + new Date(d.at).toLocaleString("ru-RU") + "\nКомментарий: " + d.comment;
+}
+
+function renderApproval() {
+  const version = currentVersion();
+  const labels = { pending: "На согласовании", approved: "Согласовано (демо)", returned: "Возвращено на доработку" };
+  document.querySelector("#approval-status").textContent = version
+    ? labels[version.status] + " · Версия " + version.version : "Требуется согласование текущего КП";
+  const pending = version && version.status === "pending";
+  document.querySelector("#request-approval").disabled = Boolean(version && version.status !== "returned");
+  document.querySelector("#approve-version").disabled = !pending;
+  document.querySelector("#return-version").disabled = !pending;
+  document.querySelector("#decision-version").textContent = pending
+    ? "Решение для сохранённой версии " + version.version + ". Итог: " + version.total
+    : "Для нового решения запросите согласование текущего КП.";
+  const stamp = document.querySelector("#approval-stamp");
+  stamp.hidden = !version || version.status !== "approved";
+  stamp.textContent = stamp.hidden ? "" : decisionText(version);
+  const history = document.querySelector("#approval-history");
+  history.replaceChildren();
+  for (const saved of [...approval.versions].reverse()) {
+    const details = document.createElement("details");
+    const summary = document.createElement("summary");
+    summary.textContent = "Версия " + saved.version + " · " + labels[saved.status] + " · " + saved.total;
+    const content = document.createElement("p");
+    content.className = "version-content";
+    content.textContent = "Запрошено: " + new Date(saved.createdAt).toLocaleString("ru-RU") + "\n\n" + saved.text + "\n\n" + decisionText(saved);
+    const print = document.createElement("button");
+    print.type = "button";
+    print.textContent = "PDF версии " + saved.version;
+    print.addEventListener("click", () => printVersion(saved));
+    details.append(summary, content, print);
+    history.append(details);
+  }
+  if (!approval.versions.length) history.textContent = "Сохранённых версий пока нет.";
+}
+
+function persistApproval(next) {
+  const previous = approval;
+  approval = next;
+  if (!saveDraft()) {
+    approval = previous;
+    renderApproval();
+    document.querySelector("#approval-error").textContent = "Не удалось сохранить согласование в браузере. Изменение не записано. Проверьте доступность хранилища и повторите.";
+    return false;
+  }
+  document.querySelector("#approval-error").textContent = "";
+  return true;
+}
+
+document.querySelector("#request-approval").addEventListener("click", () => {
+  invalidateApproval();
+  const active = currentVersion();
+  if (active && active.status !== "returned") return;
+  const text = whatsappText();
+  const version = {
+    version: approval.versions.length + 1, draft: collectDraft(), text, total: total.textContent,
+    createdAt: new Date().toISOString(), status: "pending", decision: null
+  };
+  if (persistApproval({ versions: [...approval.versions, version], active: version.version })) {
+    document.querySelector("#reviewer").value = "";
+    document.querySelector("#review-comment").value = "";
+    document.querySelector("#reviewer").focus();
+  }
+});
+
+function decideVersion(status) {
+  invalidateApproval();
+  const version = currentVersion();
+  if (!version || version.status !== "pending") { renderApproval(); return; }
+  const reviewer = document.querySelector("#reviewer");
+  const comment = document.querySelector("#review-comment");
+  if (!reviewer.value.trim() || !comment.value.trim()) {
+    document.querySelector("#approval-error").textContent = "Введите имя проверяющего и комментарий к решению.";
+    (!reviewer.value.trim() ? reviewer : comment).focus();
+    return;
+  }
+  const decided = { ...version, status, decision: {
+    version: version.version, reviewer: reviewer.value.trim(), comment: comment.value.trim(), at: new Date().toISOString()
+  } };
+  persistApproval({ ...approval, versions: approval.versions.map((v) => v.version === version.version ? decided : v) });
+}
+
+document.querySelector("#approve-version").addEventListener("click", () => decideVersion("approved"));
+document.querySelector("#return-version").addEventListener("click", () => decideVersion("returned"));
+
+function printVersion(version) {
+  const area = document.querySelector("#version-print");
+  area.replaceChildren();
+  const title = document.createElement("h1");
+  title.textContent = "КП · Версия " + version.version;
+  const content = document.createElement("div");
+  content.className = "version-content";
+  content.textContent = version.text;
+  area.append(title, content);
+  if (version.decision) {
+    const stamp = document.createElement("p");
+    stamp.className = "approval-stamp";
+    stamp.textContent = decisionText(version);
+    area.append(stamp);
+  }
+  area.hidden = false;
+  document.body.classList.add("printing-version");
+  try { window.print(); } finally { resetVersionPrint(); }
+}
+
+function resetVersionPrint() {
+  document.body.classList.remove("printing-version");
+  document.querySelector("#version-print").hidden = true;
+}
+window.addEventListener("afterprint", resetVersionPrint);

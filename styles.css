@@ -48,6 +48,18 @@ textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; 
 .screen-only { overflow-wrap: anywhere; }
 #draft-status, #copy-status { font-size: 14px; color: #566276; }
 #manual-copy { margin-top: 20px; }
+#approval-panel { margin-top: 24px; }
+#approval-panel button { padding: 12px 18px; }
+#approval-panel fieldset { min-width: 0; border: 1px solid #b9c3d2; border-radius: 8px; padding: 16px; }
+#approval-panel input { margin: 8px 0 16px; }
+#approval-panel .actions { margin-top: 16px; }
+button:disabled { cursor: default; opacity: .55; }
+.approval-stamp { white-space: pre-wrap; overflow-wrap: anywhere; padding: 16px; border: 1px solid #64748b; }
+#approval-error { color: #a32222; }
+#approval-history details { border-top: 1px solid #e3e7ee; padding: 12px 0; }
+#approval-history summary { min-height: 44px; padding: 12px 0; cursor: pointer; }
+.version-content { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; }
+[hidden] { display: none !important; }
 @media (min-width: 641px) and (max-width: 900px) { main { padding: 28px 12px; } .card { padding: 16px; } td, th { padding-left: 3px; padding-right: 3px; } input, select { padding-left: 6px; padding-right: 6px; } }
 @media (max-width: 640px) {
   main { padding: 28px 16px; }
@@ -70,6 +82,9 @@ textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; 
 
 @page { size: A4 portrait; margin: 15mm; }
 @media print {
+  body.printing-version main > * { display: none !important; }
+  body.printing-version main > #version-print { display: block !important; }
+  .approval-stamp { break-inside: avoid; }
   :root, body { background: white; color: black; }
   body { font-size: 11pt; line-height: 1.4; }
   main { max-width: none; margin: 0; padding: 0; }

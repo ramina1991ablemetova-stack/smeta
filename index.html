@@ -38,11 +38,11 @@
     </section>
     <section class="total-card" aria-label="Итог сметы">
       <dl class="summary">
-        <div class="summary-row"><dt>Сумма</dt><dd><output id="subtotal">0 ₸</output></dd></div>
-        <div class="summary-row" id="discount-row" hidden><dt>Скидка</dt><dd><output id="discount-amount">0 ₸</output></dd></div>
-        <div class="summary-row" id="discounted-row" hidden><dt>Сумма со скидкой</dt><dd><output id="discounted-amount">0 ₸</output></dd></div>
-        <div class="summary-row" id="vat-row" hidden><dt>НДС</dt><dd><output id="vat-amount">0 ₸</output></dd></div>
-        <div class="summary-row grand-total"><dt>Итого к оплате</dt><dd><output id="total" aria-live="polite" aria-atomic="true">0 ₸</output></dd></div>
+        <div class="summary-row"><dt>Сумма</dt><dd><output id="subtotal">0,00 ₸</output></dd></div>
+        <div class="summary-row" id="discount-row" hidden><dt>Скидка</dt><dd><output id="discount-amount">0,00 ₸</output></dd></div>
+        <div class="summary-row" id="discounted-row" hidden><dt>Сумма со скидкой</dt><dd><output id="discounted-amount">0,00 ₸</output></dd></div>
+        <div class="summary-row" id="vat-row" hidden><dt>НДС</dt><dd><output id="vat-amount">0,00 ₸</output></dd></div>
+        <div class="summary-row grand-total"><dt>Итого к оплате</dt><dd><output id="total" aria-live="polite" aria-atomic="true">0,00 ₸</output></dd></div>
       </dl>
     </section>
     <section class="card comment-card" aria-labelledby="comment-title">
@@ -51,6 +51,29 @@
       <textarea id="comment" rows="4" placeholder="Например, оплата в течение 5 рабочих дней"></textarea>
     </section>
     <p class="print-only signature">Подпись: ____________________</p>
+    <p id="approval-stamp" class="approval-stamp" hidden></p>
+    <section id="approval-panel" class="card screen-only" aria-labelledby="approval-title">
+      <h2 id="approval-title">Внутреннее согласование КП (демо)</h2>
+      <p>Данные и решения хранятся только в этом браузере. Это демонстрация, без отправки руководителю.</p>
+      <button type="button" id="request-approval">Запросить согласование</button>
+      <p id="approval-status" role="status">Требуется согласование</p>
+      <p id="approval-error" role="alert"></p>
+      <fieldset>
+        <legend>Демо: решение руководителя</legend>
+        <p id="decision-version">Сначала запросите согласование текущего КП.</p>
+        <label for="reviewer">Имя проверяющего</label>
+        <input id="reviewer" type="text" autocomplete="off">
+        <label for="review-comment">Комментарий к решению</label>
+        <textarea id="review-comment" rows="3"></textarea>
+        <div class="actions">
+          <button type="button" id="approve-version" disabled>Согласовать</button>
+          <button type="button" id="return-version" disabled>Вернуть на доработку</button>
+        </div>
+      </fieldset>
+      <h3>Сохранённые версии</h3>
+      <div id="approval-history"></div>
+    </section>
+    <section id="version-print" class="print-only" hidden aria-label="Сохранённая версия КП"></section>
     <div class="actions">
       <button type="button" id="save-pdf">Сохранить PDF</button>
       <button type="button" id="copy-whatsapp">Копировать для WhatsApp</button>
@@ -70,7 +93,7 @@
       <td data-label="Количество"><input class="quantity" type="text" inputmode="decimal" aria-label="Количество" placeholder="0"></td>
       <td data-label="Единица"><select aria-label="Единица"><option>шт</option><option>час</option><option>услуга</option></select></td>
       <td data-label="Цена"><input class="price" type="text" inputmode="decimal" aria-label="Цена, ₸" placeholder="0"></td>
-      <td data-label="Сумма" class="amount-cell"><output class="amount">0 ₸</output></td>
+      <td data-label="Сумма" class="amount-cell"><output class="amount">0,00 ₸</output></td>
       <td class="remove-cell"><button class="remove" type="button" aria-label="Удалить позицию">✕</button></td>
     </tr>
   </template>
