@@ -9,6 +9,13 @@ const currency = document.querySelector("#currency");
 const moneyFormatter = new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 const draftKey = "smeta-five-minutes-draft-v1";
 const senderKey = "smeta-my-details-sender-v1";
+document.querySelector("#create-estimate").addEventListener("click", () => {
+  document.querySelector('[name="sender"]').focus({ preventScroll: true });
+  document.querySelector("#estimate-details").scrollIntoView({
+    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+    block: "start"
+  });
+});
 const draftFields = {
   sender: '[name="sender"]',
   recipient: '[name="recipient"]',

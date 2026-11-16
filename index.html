@@ -9,12 +9,26 @@
 </head>
 <body>
   <main>
-    <header>
-      <h1>Смета за 5 минут</h1>
-      <p>Укажите реквизиты и добавьте позиции — итог посчитается автоматически.</p>
+    <header class="intro screen-only">
+      <div class="brand" aria-label="Название компании">Смета за 5 минут</div>
+      <div class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Для вашего бизнеса</p>
+          <h1>Смета за<br>5 минут</h1>
+          <p class="hero-description">Заполните данные и рассчитайте итоговую стоимость</p>
+          <button type="button" id="create-estimate">Создать смету <span aria-hidden="true">↓</span></button>
+        </div>
+        <figure class="example" aria-labelledby="example-title">
+          <figcaption id="example-title">Пример сметы</figcaption>
+          <div class="example-heading">Смета <span>№ 001</span></div>
+          <div class="example-item"><span>Дизайн</span><span>2 × 15 000 ₸</span></div>
+          <div class="example-item"><span>Печать</span><span>1 × 8 000 ₸</span></div>
+          <div class="example-total"><span>Итого к оплате</span><strong>38 000 ₸</strong></div>
+        </figure>
+      </div>
     </header>
     <h1 id="print-title" class="print-only"></h1>
-    <section class="card" aria-labelledby="details-title">
+    <section id="estimate-details" class="card" aria-labelledby="details-title">
       <h2 id="details-title">Реквизиты</h2>
       <div class="details">
         <label>От кого<input type="text" name="sender" placeholder="Ваше имя или компания"></label>
@@ -25,10 +39,12 @@
     </section>
     <section class="card" aria-labelledby="items-title">
       <h2 id="items-title">Позиции</h2>
+      <div class="table-scroll" role="region" aria-label="Позиции сметы — таблица с горизонтальной прокруткой" tabindex="0">
       <table>
         <thead><tr><th scope="col">Наименование</th><th scope="col">Количество</th><th scope="col">Единица</th><th scope="col">Цена</th><th scope="col">Сумма</th><th scope="col"><span class="sr-only">Удаление</span></th></tr></thead>
         <tbody id="items"></tbody>
       </table>
+      </div>
       <div class="actions item-actions">
         <button type="button" id="add-item">+ Добавить позицию</button>
         <button type="button" id="clear-estimate">Очистить смету</button>
