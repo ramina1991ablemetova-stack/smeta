@@ -43,8 +43,8 @@ textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; 
 #save-pdf { padding: 12px 24px; color: white; background: var(--accent); border: 0; font-weight: 600; }
 #save-pdf:hover { background: #2849b8; }
 .actions { display: flex; flex-wrap: wrap; gap: 12px; }
-.actions button:not(#save-pdf) { padding: 12px 18px; border: 1px solid #b9c3d2; color: #1d2939; background: white; }
-.actions button:not(#save-pdf):hover { background: #e8ecf2; }
+.actions button:not(#save-pdf):not(#add-item) { padding: 12px 18px; border: 1px solid #b9c3d2; color: #1d2939; background: white; }
+.actions button:not(#save-pdf):not(#add-item):hover { background: #e8ecf2; }
 .screen-only { overflow-wrap: anywhere; }
 #draft-status, #copy-status { font-size: 14px; color: #566276; }
 #manual-copy { margin-top: 20px; }
@@ -76,7 +76,7 @@ button:disabled { cursor: default; opacity: .55; }
   .amount-cell { align-self: center; }
   .remove-cell { display: flex; justify-content: flex-end; align-items: end; }
   .remove-cell::before { display: none; }
-  #add-item { width: 100%; }
+  .item-actions button { width: 100%; }
   .total-card { align-items: flex-start; flex-direction: column; padding: 24px; }
 }
 

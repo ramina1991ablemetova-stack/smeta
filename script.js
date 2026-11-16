@@ -6,8 +6,9 @@ const total = document.querySelector("#total");
 const discountRate = document.querySelector("#discount-rate");
 const vatRate = document.querySelector("#vat-rate");
 const currency = document.querySelector("#currency");
-const moneyFormatter = new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const moneyFormatter = new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 const draftKey = "smeta-five-minutes-draft-v1";
+const senderKey = "smeta-my-details-sender-v1";
 const draftFields = {
   sender: '[name="sender"]',
   recipient: '[name="recipient"]',
@@ -39,7 +40,7 @@ function roundedInteger(value) {
 
 function money(value) {
   const rounded = roundedInteger(value * 100) / 100;
-  return moneyFormatter.format(rounded === 0 ? 0 : rounded).replace(/[\u00a0\u202f]/g, " ") + " " + currency.value;
+  return (rounded === 0 ? "0" : moneyFormatter.format(rounded).replace(/[\u00a0\u202f]/g, " ")) + " " + currency.value;
 }
 
 function recalculate() {
@@ -158,6 +159,7 @@ function saveDraft() {
   clearTimeout(copyTimer);
   document.querySelector("#copy-status").textContent = "";
   try {
+    localStorage.setItem(senderKey, document.querySelector(draftFields.sender).value);
     localStorage.setItem(draftKey, JSON.stringify({ ...collectDraft(), approval }));
     document.querySelector("#draft-status").textContent = "Черновик сохранён в этом браузере";
     return true;
@@ -219,16 +221,33 @@ document.querySelector("#new-estimate").addEventListener("click", () => {
   const nextNumber = match
     ? match[1] + (BigInt(match[2]) + 1n).toString().padStart(match[2].length, "0")
     : "1";
-  for (const selector of Object.values(draftFields)) document.querySelector(selector).value = "";
-  numberField.value = nextNumber;
+  resetEstimate(nextNumber);
+});
+
+document.querySelector("#clear-estimate").addEventListener("click", () => {
+  if (!window.confirm("Удалить все позиции текущей сметы? Остальные поля, настройки и история согласований сохранятся.")) return;
+  items.replaceChildren();
+  addItem();
+});
+
+function resetEstimate(number = "") {
+  approval.active = null;
+  for (const [key, selector] of Object.entries(draftFields)) {
+    if (key !== "sender") document.querySelector(selector).value = "";
+  }
+  document.querySelector(draftFields.number).value = number;
   const now = new Date();
   document.querySelector("#estimate-date").value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   discountRate.value = "0";
   vatRate.value = "0";
   currency.value = "₸";
+  document.querySelector("#reviewer").value = "";
+  document.querySelector("#review-comment").value = "";
+  document.querySelector("#approval-error").textContent = "";
+  document.querySelector("#whatsapp-text").value = "";
   items.replaceChildren();
   addItem();
-});
+}
 
 function whatsappText() {
   recalculate();
@@ -276,8 +295,22 @@ document.querySelector("#copy-whatsapp").addEventListener("click", async () => {
 });
 
 restoreDraft();
+restoreMyDetails();
 draftReady = true;
 renderApproval();
+
+function restoreMyDetails() {
+  const sender = document.querySelector(draftFields.sender);
+  try {
+    const saved = localStorage.getItem(senderKey);
+    // Существующий черновик сохраняет свои реквизиты; пустая форма использует мои.
+    if (!sender.value && saved !== null) sender.value = saved;
+    if (saved === null) localStorage.setItem(senderKey, sender.value);
+    invalidateApproval();
+  } catch {
+    document.querySelector("#draft-status").textContent = "Не удалось загрузить или сохранить мои реквизиты. Проверьте, разрешено ли хранение данных в браузере.";
+  }
+}
 
 function currentVersion() {
   return approval.versions.find((version) => version.version === approval.active);

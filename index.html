@@ -29,7 +29,10 @@
         <thead><tr><th scope="col">Наименование</th><th scope="col">Количество</th><th scope="col">Единица</th><th scope="col">Цена</th><th scope="col">Сумма</th><th scope="col"><span class="sr-only">Удаление</span></th></tr></thead>
         <tbody id="items"></tbody>
       </table>
-      <button type="button" id="add-item">+ Добавить позицию</button>
+      <div class="actions item-actions">
+        <button type="button" id="add-item">+ Добавить позицию</button>
+        <button type="button" id="clear-estimate">Очистить смету</button>
+      </div>
       <div class="adjustments">
         <label>Скидка, %<input id="discount-rate" type="text" inputmode="decimal" value="0"></label>
         <label>НДС, %<input id="vat-rate" type="text" inputmode="decimal" value="0"></label>
