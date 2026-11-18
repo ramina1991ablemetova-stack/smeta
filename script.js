@@ -50,6 +50,43 @@ function money(value) {
   return (rounded === 0 ? "0" : moneyFormatter.format(rounded).replace(/[\u00a0\u202f]/g, " ")) + " " + currency.value;
 }
 
+function amountInWords(tiyn) {
+  if (currency.value !== "₸" || !Number.isSafeInteger(tiyn) || tiyn <= 0 || tiyn > 99999999900) return "";
+  const units = ["", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять"];
+  const teens = ["десять", "одиннадцать", "двенадцать", "тринадцать", "четырнадцать", "пятнадцать", "шестнадцать", "семнадцать", "восемнадцать", "девятнадцать"];
+  const tens = ["", "", "двадцать", "тридцать", "сорок", "пятьдесят", "шестьдесят", "семьдесят", "восемьдесят", "девяносто"];
+  const hundreds = ["", "сто", "двести", "триста", "четыреста", "пятьсот", "шестьсот", "семьсот", "восемьсот", "девятьсот"];
+  function form(number, forms) {
+    const last100 = number % 100;
+    const last10 = number % 10;
+    return forms[last100 >= 11 && last100 <= 14 ? 2 : last10 === 1 ? 0 : last10 >= 2 && last10 <= 4 ? 1 : 2];
+  }
+  function group(number, feminine = false) {
+    const words = [hundreds[Math.floor(number / 100)]];
+    const rest = number % 100;
+    if (rest >= 10 && rest < 20) words.push(teens[rest - 10]);
+    else {
+      words.push(tens[Math.floor(rest / 10)]);
+      const digit = rest % 10;
+      words.push(feminine && digit === 1 ? "одна" : feminine && digit === 2 ? "две" : units[digit]);
+    }
+    return words.filter(Boolean).join(" ");
+  }
+  const tenge = Math.floor(tiyn / 100);
+  const fraction = tiyn % 100;
+  const parts = [];
+  const millions = Math.floor(tenge / 1000000);
+  const thousands = Math.floor(tenge / 1000) % 1000;
+  if (millions) parts.push(group(millions), form(millions, ["миллион", "миллиона", "миллионов"]));
+  if (thousands) parts.push(group(thousands, true), form(thousands, ["тысяча", "тысячи", "тысяч"]));
+  if (tenge % 1000) parts.push(group(tenge % 1000));
+  if (!tenge) parts.push("ноль");
+  parts.push("тенге");
+  if (fraction) parts.push(group(fraction), form(fraction, ["тиын", "тиына", "тиынов"]));
+  const result = parts.join(" ");
+  return result[0].toUpperCase() + result.slice(1);
+}
+
 function recalculate() {
   let sum = 0;
   for (const row of items.rows) {
@@ -72,7 +109,11 @@ function recalculate() {
   document.querySelector("#discount-row").hidden = discountPercent === 0;
   document.querySelector("#discounted-row").hidden = discountPercent === 0;
   document.querySelector("#vat-row").hidden = vatPercent === 0;
-  total.textContent = money((discounted + vat) / 100);
+  const finalTiyn = discounted + vat;
+  total.textContent = money(finalTiyn / 100);
+  const words = document.querySelector("#total-words");
+  words.textContent = amountInWords(finalTiyn);
+  words.hidden = !words.textContent;
 }
 
 function addItem(focus = true) {
@@ -277,6 +318,8 @@ function whatsappText() {
   }
   if (numberFromInput(fields.vat) !== 0) lines.push(`НДС (${numberFromInput(fields.vat)}%): ${document.querySelector("#vat-amount").textContent}`);
   lines.push(`Итого к оплате: ${total.textContent}`);
+  const words = document.querySelector("#total-words");
+  if (!words.hidden) lines.push(words.textContent);
   if (fields.comment.trim()) lines.push("", `Комментарий: ${fields.comment}`);
   return lines.join("\n");
 }
